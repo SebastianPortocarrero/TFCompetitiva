@@ -109,9 +109,9 @@ Sistema automatizado que:
                            ▼
 ┌─────────────────────────────────────────────────────────┐
 │              CAPA 4: BASE DE DATOS                      │
-│              (PostgreSQL / MySQL)                       │
+│              (MongoDB)                                  │
 │                                                         │
-│  Tablas:                                                │
+│  Colecciones:                                           │
 │  • usuarios (autenticación)                             │
 │  • sospechosos (base de datos permanente)              │
 │  • busquedas (auditoría y trazabilidad)                │
@@ -589,21 +589,22 @@ Para evaluar la productividad y carga de trabajo.
 
 ---
 
-## 🗄️ DISEÑO DE BASE DE DATOS
+## 🗄️ DISEÑO DE BASE DE DATOS (MongoDB)
 
-### Diagrama ERD
+### Diagrama de Colecciones
 
 ```
 ┌─────────────────────┐
 │     usuarios        │
 ├─────────────────────┤
-│ PK  id              │
+│ _id (ObjectId)      │
 │     nombre          │
 │ UQ  email           │
 │     password_hash   │
 │     rol             │
 │     fecha_creacion  │
 │     ultimo_login    │
+│     activo          │
 └─────────────────────┘
            │
            │ 1:N
@@ -639,14 +640,46 @@ Para evaluar la productividad y carga de trabajo.
 └─────────────────────┘
 ```
 
-### Schemas SQL Detallados
+### Schemas MongoDB (Mongoose)
 
-```sql
--- =====================================================
--- TABLA: usuarios
--- Almacena credenciales y datos de acceso
--- =====================================================
-CREATE TABLE usuarios (
+```javascript
+// =====================================================
+// COLECCIÓN: usuarios
+// Almacena credenciales y datos de acceso
+// =====================================================
+const usuarioSchema = new mongoose.Schema({
+  nombre: {
+    type: String,
+    required: true,
+    maxlength: 100
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    maxlength: 100
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  rol: {
+    type: String,
+    enum: ['perito', 'admin', 'investigador'],
+    default: 'perito'
+  },
+  activo: {
+    type: Boolean,
+    default: true
+  },
+  ultimoLogin: Date
+}, {
+  timestamps: true // Crea createdAt y updatedAt automáticamente
+});
+
+// NOTA IMPORTANTE: El schema actual usa MongoDB en lugar de PostgreSQL
+// Original en PRD especificaba:
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
