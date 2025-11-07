@@ -1,0 +1,77 @@
+========================================
+✅ MOTOR C++ ACTUALIZADO Y LISTO
+========================================
+
+NUEVAS CARACTERÍSTICAS:
+✅ Soporte para MÚLTIPLES PATRONES simultáneos
+✅ Selección automática de Aho-Corasick para 2+ patrones
+✅ JSON mejorado con patron_id y patrón específico
+✅ Parseo de patrones separados por coma
+
+PARA COMPILAR:
+========================================
+
+En PowerShell:
+    cd D:\trabajoFinalCompe\cpp-engine
+    .\compilar_mingw.bat
+
+O directamente:
+    g++ -std=c++17 -O3 -Wall -I./include ./src/main.cpp ./src/algorithms/kmp.cpp ./src/algorithms/rabin_karp.cpp ./src/algorithms/aho_corasick.cpp ./src/utils/csv_parser.cpp ./src/utils/algorithm_selector.cpp ./src/utils/json_output.cpp -o ./build/busqueda_adn.exe
+
+
+PARA PROBAR:
+========================================
+
+Test básico (1 patrón):
+    .\build\busqueda_adn.exe "TGTACCTTACAATCG" "data\sospechosos_test.csv"
+
+Test con 2 patrones:
+    .\build\busqueda_adn.exe "TGTACCTTACAATCG,GGCCTTAA" "data\sospechosos_test.csv"
+
+Test completo:
+    .\probar_multiple.bat
+
+
+RESULTADO ESPERADO:
+========================================
+
+Con 2+ patrones:
+- algoritmo_usado: "aho-corasick"
+- criterio_seleccion: "multiples_patrones_busqueda_simultanea"
+- Cada coincidencia tiene patron_id y patron específico
+
+Ejemplo JSON:
+{
+  "patrones": ["TGTACCTTACAATCG", "GGCCTTAA"],
+  "num_patrones": 2,
+  "algoritmo_usado": "aho-corasick",
+  "coincidencias": [
+    {
+      "nombre": "Juan Perez",
+      "patron_id": 0,
+      "patron": "TGTACCTTACAATCG",
+      "posicion": 12
+    },
+    {
+      "nombre": "Maria Lopez",
+      "patron_id": 1,
+      "patron": "GGCCTTAA",
+      "posicion": 5
+    }
+  ]
+}
+
+
+INTEGRACIÓN CON BACKEND:
+========================================
+
+const patrones = ['PATRON1', 'PATRON2', 'PATRON3'];
+const cmd = `busqueda_adn.exe "${patrones.join(',')}" "sospechosos.csv"`;
+exec(cmd, (error, stdout) => {
+  const resultado = JSON.parse(stdout);
+  // resultado.algoritmo_usado === "aho-corasick"
+  // resultado.num_patrones === 3
+});
+
+
+¡TODO LISTO PARA COMPILAR!

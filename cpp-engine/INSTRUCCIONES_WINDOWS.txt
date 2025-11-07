@@ -1,0 +1,89 @@
+========================================
+INSTRUCCIONES PARA COMPILAR EN WINDOWS
+========================================
+
+PASO 1: VERIFICAR QUE COMPILADOR TIENES
+========================================
+
+Abre CMD o PowerShell y ejecuta:
+
+    g++ --version
+
+Si funciona -> Tienes MinGW/g++ instalado
+Si no funciona -> Continúa al Paso 2
+
+
+PASO 2: INSTALAR COMPILADOR (si no lo tienes)
+========================================
+
+OPCIÓN A - MinGW (Recomendado, más simple):
+-------------------------------------------
+1. Descarga desde: https://winlibs.com/
+2. Descarga: "GCC 13.2.0 + MinGW-w64 11.0.0 (MSVCRT) - release 6"
+3. Extrae el ZIP a C:\mingw64
+4. Agrega a PATH: C:\mingw64\bin
+5. Reinicia CMD y verifica: g++ --version
+
+OPCIÓN B - Visual Studio:
+-------------------------------------------
+1. Descarga Visual Studio Community (gratis)
+2. Instala "Desktop development with C++"
+3. Usa "Developer Command Prompt for VS"
+
+
+PASO 3: COMPILAR EL PROYECTO
+========================================
+
+Si tienes MinGW/g++:
+-------------------
+Haz doble clic en:
+    compilar_mingw.bat
+
+Si tienes Visual Studio:
+-----------------------
+1. Abre "Developer Command Prompt for VS"
+2. cd D:\trabajoFinalCompe\cpp-engine
+3. Ejecuta: compilar_visual_studio.bat
+
+
+PASO 4: PROBAR EL EJECUTABLE
+========================================
+
+Opción 1 - Prueba automática:
+    Haz doble clic en: probar.bat
+
+Opción 2 - Prueba manual:
+    build\busqueda_adn.exe "TGTACCTTACAATCG" "data\sospechosos_test.csv"
+
+
+RESULTADO ESPERADO:
+========================================
+
+Deberías ver un JSON con 3 coincidencias:
+- Juan Perez Martinez (posición 13)
+- Pedro Garcia Sanchez (posición 13)
+- Miguel Torres Silva (posición 5)
+
+Algoritmo usado: kmp
+Tiempo: < 100 ms
+
+
+SOLUCIÓN DE PROBLEMAS:
+========================================
+
+Error: "g++ no se reconoce"
+-> No está en PATH. Agrega C:\mingw64\bin al PATH del sistema
+
+Error: "cl no se reconoce"
+-> Usa "Developer Command Prompt for VS", no el CMD normal
+
+Error: "No se pudo abrir el archivo"
+-> Verifica que data\sospechosos_test.csv exista
+
+Error: "Patrón inválido"
+-> Solo usa caracteres A, T, C, G en el patrón
+
+
+¿NECESITAS AYUDA?
+========================================
+Revisa el README.md para más detalles
