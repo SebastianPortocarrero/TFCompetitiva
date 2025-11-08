@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Search, Lock, Mail } from 'lucide-react';
+import { Lock, Mail } from 'lucide-react';
+import logo from '../img/logo.webp';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -32,7 +33,10 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-dark p-4">
+    <div 
+      className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat bg-fixed p-4"
+      style={{ backgroundImage: "url('/src/img/fondoADN.webp')" }}
+    >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -40,8 +44,8 @@ const Login = () => {
       >
         <div className="glass-card rounded-2xl p-8 shadow-glow">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center mb-4">
-              <Search className="w-8 h-8 text-primary-foreground" />
+            <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mb-4">
+              <img src={logo} alt="DNA Forensics Logo" className="w-16 h-16 object-contain filter brightness-125 contrast-125 drop-shadow-lg" />
             </div>
             <h1 className="text-3xl font-bold gradient-text">DNA Forensics</h1>
             <p className="text-sm text-muted-foreground mt-2">Sistema de Identificación PNP</p>

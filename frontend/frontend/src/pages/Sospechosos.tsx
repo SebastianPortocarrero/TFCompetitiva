@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
-import { Upload, Search } from 'lucide-react';
+import { Upload } from 'lucide-react';
+import logo from '../img/logo.webp';
 import { toast } from 'sonner';
 import { mockSuspects } from '@/data/mockData';
 
@@ -36,7 +37,7 @@ const Sospechosos = () => {
             <CardTitle>Registros ({filteredSuspects.length})</CardTitle>
             <div className="flex gap-2">
               <div className="relative flex-1 md:w-64">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <img src={logo} alt="DNA Forensics Logo" className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground object-contain filter brightness-125 contrast-125 drop-shadow-lg" />
                 <Input
                   placeholder="Buscar por nombre o DNI..."
                   value={searchTerm}
