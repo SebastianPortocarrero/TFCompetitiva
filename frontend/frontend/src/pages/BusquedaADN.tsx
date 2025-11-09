@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { motion } from 'framer-motion';
-import { Search, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import logo from '../img/logo.webp';
 import { toast } from 'sonner';
 import { mockSuspects } from '@/data/mockData';
 
@@ -129,7 +130,7 @@ const BusquedaADN = () => {
             disabled={analyzing}
             className="w-full md:w-auto btn-glow bg-gradient-primary"
           >
-            <Search className="w-4 h-4 mr-2" />
+            <img src={logo} alt="DNA Forensics Logo" className="w-4 h-4 mr-2 object-contain filter brightness-125 contrast-125 drop-shadow-lg" />
             {analyzing ? 'Analizando...' : 'Iniciar Análisis'}
           </Button>
         </CardContent>

@@ -1,5 +1,6 @@
 import { NavLink } from '@/components/NavLink';
-import { Home, Search, Users, History, FileText, BarChart3, Settings, UserCog } from 'lucide-react';
+import { Home, Users, History, FileText, BarChart3, Settings, UserCog } from 'lucide-react';
+import logo from '../img/logo.webp';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -8,7 +9,7 @@ const Sidebar = () => {
 
   const menuItems = [
     { name: 'Dashboard', icon: Home, path: '/dashboard' },
-    { name: 'Búsqueda ADN', icon: Search, path: '/busqueda' },
+    { name: 'Búsqueda ADN', icon: () => <img src={logo} alt="DNA Forensics Logo" className="w-5 h-5" />, path: '/busqueda' },
     { name: 'Sospechosos', icon: Users, path: '/sospechosos' },
     { name: 'Historial', icon: History, path: '/historial' },
     { name: 'Reportes', icon: FileText, path: '/reportes' },
@@ -29,7 +30,7 @@ const Sidebar = () => {
       <div className="p-6">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-            <Search className="w-6 h-6 text-primary-foreground" />
+            <img src={logo} alt="DNA Forensics Logo" className="w-6 h-6 text-primary-foreground object-contain filter brightness-125 contrast-125 drop-shadow-lg" />
           </div>
           <div>
             <h1 className="text-lg font-bold gradient-text">DNA Forensics</h1>

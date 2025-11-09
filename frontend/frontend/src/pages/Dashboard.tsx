@@ -1,12 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { mockStats, mockChartData } from '@/data/mockData';
-import { Search, CheckCircle, Clock, TrendingUp } from 'lucide-react';
+import { CheckCircle, Clock, TrendingUp } from 'lucide-react';
+import logo from '../img/logo.webp';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Dashboard = () => {
   const stats = [
-    { title: 'Búsquedas Totales', value: mockStats.totalSearches, icon: Search, color: 'text-primary' },
+    { title: 'Búsquedas Totales', value: mockStats.totalSearches, icon: () => <img src={logo} alt="DNA Forensics Logo" className="w-5 h-5 object-contain filter brightness-125 contrast-125 drop-shadow-lg" />, color: 'text-primary' },
     { title: 'Coincidencias', value: mockStats.totalMatches, icon: CheckCircle, color: 'text-secondary' },
     { title: 'Tiempo Promedio', value: mockStats.avgProcessingTime, icon: Clock, color: 'text-accent' },
     { title: 'Tasa de Éxito', value: `${mockStats.successRate}%`, icon: TrendingUp, color: 'text-secondary' },
