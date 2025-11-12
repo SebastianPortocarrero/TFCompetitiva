@@ -2,6 +2,7 @@ import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+import AIChat from './AIChat';
 
 const MainLayout = () => {
   const { isAuthenticated } = useAuth();
@@ -19,6 +20,9 @@ const MainLayout = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* Chat de IA flotante (disponible en todas las páginas) */}
+      <AIChat />
     </div>
   );
 };

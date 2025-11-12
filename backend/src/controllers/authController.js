@@ -2,6 +2,21 @@ const Usuario = require('../models/Usuario');
 const { generarToken } = require('../middlewares/auth');
 const { ErrorAPI } = require('../middlewares/errorHandler');
 
+/**
+ * ============================================
+ * CONTROLADOR: AUTENTICACIÓN
+ * ============================================
+ *
+ * MODELO DE SEGURIDAD FORENSE
+ *
+ * ⚠️ IMPORTANTE: La función de registro público ha sido ELIMINADA
+ *
+ * Razón: Este es un sistema forense de identificación de ADN.
+ * Solo administradores pueden crear usuarios.
+ *
+ * Ver: backend/src/controllers/adminController.js
+ */
+
 const formatearUsuario = (usuario) => ({
   id: usuario.id,
   nombre: usuario.nombre,
@@ -11,31 +26,20 @@ const formatearUsuario = (usuario) => ({
   creadoEn: usuario.createdAt
 });
 
-exports.registrarUsuario = async (req, res, next) => {
-  try {
-    const { nombre, email, password, rol } = req.body;
+// ============================================
+// FUNCIÓN ELIMINADA (Seguridad Forense)
+// ============================================
+//
+// exports.registrarUsuario = async (req, res, next) => { ... }
+//
+// El registro de usuarios ahora se hace mediante:
+// POST /api/admin/usuarios/crear (requiere rol 'admin')
+// Ver: backend/src/controllers/adminController.js -> crearUsuario()
 
-    const existente = await Usuario.findOne({ email: email.toLowerCase() });
-    if (existente) {
-      throw new ErrorAPI('El email ya está registrado', 400);
-    }
-
-    const usuario = await Usuario.create({ nombre, email, password, rol });
-    const token = generarToken(usuario.id);
-
-    res.status(201).json({
-      success: true,
-      message: 'Usuario creado exitosamente',
-      data: {
-        token,
-        usuario: formatearUsuario(usuario)
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
+/**
+ * POST /api/auth/login
+ * Autenticar usuario con credenciales
+ */
 exports.iniciarSesion = async (req, res, next) => {
   try {
     const { email, password } = req.body;

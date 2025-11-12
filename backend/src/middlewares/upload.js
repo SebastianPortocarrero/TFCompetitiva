@@ -19,8 +19,17 @@ const storageTemporal = multer.diskStorage({
 });
 
 const filtrarCsv = (_, file, cb) => {
-  if (file.mimetype !== 'text/csv' && !file.originalname.endsWith('.csv')) {
-    cb(new Error('Solo se permiten archivos CSV'));
+  const mimetypesPermitidos = [
+    'text/csv',
+    'application/vnd.ms-excel', // .xls
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' // .xlsx
+  ];
+
+  const extensionesPermitidas = ['.csv', '.xls', '.xlsx'];
+  const extension = file.originalname.toLowerCase().slice(file.originalname.lastIndexOf('.'));
+
+  if (!mimetypesPermitidos.includes(file.mimetype) && !extensionesPermitidas.includes(extension)) {
+    cb(new Error('Solo se permiten archivos CSV o Excel (.csv, .xls, .xlsx)'));
     return;
   }
   cb(null, true);
@@ -32,4 +41,4 @@ exports.subirCsvSospechosos = multer({
   limits: {
     fileSize: 5 * 1024 * 1024
   }
-}).single('csv');
+}).single('file');

@@ -19,9 +19,9 @@ std::vector<std::string> dividirPorComa(const std::string& str) {
     std::string item;
 
     while (std::getline(ss, item, ',')) {
-        // Eliminar espacios en blanco
-        size_t inicio = item.find_first_not_of(" \t");
-        size_t fin = item.find_last_not_of(" \t");
+        // Eliminar espacios en blanco, tabs, retornos de carro y saltos de línea
+        size_t inicio = item.find_first_not_of(" \t\r\n");
+        size_t fin = item.find_last_not_of(" \t\r\n");
 
         if (inicio != std::string::npos && fin != std::string::npos) {
             resultado.push_back(item.substr(inicio, fin - inicio + 1));
@@ -50,8 +50,28 @@ int main(int argc, char* argv[]) {
     auto inicio = std::chrono::high_resolution_clock::now();
 
     try {
+        // DEBUG: Mostrar lo que recibimos
+        std::cerr << "[DEBUG] Argumento recibido (argv[1]): '" << patronesInput << "'" << std::endl;
+        std::cerr << "[DEBUG] Longitud: " << patronesInput.length() << std::endl;
+        std::cerr << "[DEBUG] Bytes (hex): ";
+        for (unsigned char c : patronesInput) {
+            std::cerr << std::hex << (int)c << " ";
+        }
+        std::cerr << std::dec << std::endl;
+
         // Parsear patrones (pueden ser múltiples separados por coma)
         std::vector<std::string> patrones = dividirPorComa(patronesInput);
+
+        // DEBUG: Mostrar patrones parseados
+        std::cerr << "[DEBUG] Patrones parseados: " << patrones.size() << std::endl;
+        for (size_t i = 0; i < patrones.size(); i++) {
+            std::cerr << "[DEBUG] Patron " << i << ": '" << patrones[i] << "' (len=" << patrones[i].length() << ")" << std::endl;
+            std::cerr << "[DEBUG] Bytes: ";
+            for (unsigned char c : patrones[i]) {
+                std::cerr << std::hex << (int)c << " ";
+            }
+            std::cerr << std::dec << std::endl;
+        }
 
         if (patrones.empty()) {
             std::string error = JSONOutput::generarError(
@@ -66,6 +86,8 @@ int main(int argc, char* argv[]) {
         // Validar todos los patrones
         for (size_t i = 0; i < patrones.size(); i++) {
             const std::string& patron = patrones[i];
+
+            std::cerr << "[DEBUG] Validando patron " << i << ": '" << patron << "'" << std::endl;
 
             if (!CSVParser::validarCadenaADN(patron)) {
                 std::ostringstream msg;

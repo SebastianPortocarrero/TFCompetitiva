@@ -174,27 +174,52 @@ Sistema automatizado que:
 
 ## 📊 REQUERIMIENTOS FUNCIONALES
 
-### RF-001: Gestión de Usuarios
+### RF-001: Gestión de Usuarios (Modelo Forense Restringido)
 
-**Prioridad:** MUST HAVE  
-**Complejidad:** Media  
+**Prioridad:** MUST HAVE
+**Complejidad:** Media
 
-**User Story:**
+**Modelo de Seguridad Forense:**
 ```
-Como perito criminalista,
-Quiero crear una cuenta y hacer login,
+⚠️ IMPORTANTE: Este es un sistema forense de identificación de ADN.
+Por razones de seguridad, responsabilidad legal y cadena de custodia:
+- NO hay registro público
+- Solo administradores pueden crear cuentas
+- Cada usuario debe ser personal autorizado y verificado
+- Trazabilidad completa de todas las acciones
+```
+
+**User Story 1: Administrador crea usuario**
+```
+Como administrador del sistema,
+Quiero crear cuentas para personal autorizado,
+Para garantizar que solo peritos verificados accedan al sistema.
+```
+
+**User Story 2: Usuario autorizado hace login**
+```
+Como perito criminalista con cuenta creada por administrador,
+Quiero hacer login con mis credenciales,
 Para acceder al sistema de forma segura y mantener trazabilidad de mis análisis.
 ```
 
 **Criterios de Aceptación:**
 ```gherkin
-Given que soy un usuario nuevo
-When completo el formulario de registro con email y contraseña
-Then se crea mi cuenta con credenciales encriptadas
+Given que soy un administrador autenticado
+When accedo al panel de gestión de usuarios
+Then puedo crear nuevas cuentas para personal autorizado
 
-Given que tengo una cuenta activa
+Given que soy un administrador
+When creo una cuenta con email y contraseña temporal
+Then el sistema crea la cuenta y notifica al usuario
+
+Given que soy un usuario con cuenta creada por admin
 When ingreso mis credenciales correctas
 Then recibo un token JWT y accedo al dashboard
+
+Given que intento acceder sin ser administrador
+When intento crear un usuario
+Then el sistema rechaza la operación con error 403 Forbidden
 
 Given que mi sesión ha expirado
 When intento hacer una operación
@@ -202,11 +227,14 @@ Then el sistema me redirige al login
 ```
 
 **Especificaciones técnicas:**
+- **Registro:** Solo mediante endpoint `/api/admin/usuarios/crear` (requiere rol 'admin')
 - Email único por usuario
 - Contraseña mínimo 8 caracteres (mayúsculas, minúsculas, números)
 - Hash con bcrypt (salt rounds: 10)
 - JWT con expiración de 24 horas
-- Refresh token opcional
+- Roles: 'admin', 'perito', 'investigador'
+- Usuario inicial admin creado via script de setup
+- Notificación por email al crear usuario (opcional)
 
 ---
 
@@ -919,8 +947,31 @@ INSERT INTO sospechosos (nombre_completo, cedula, cadena_adn, fuente_muestra, us
 
 ### Autenticación
 
-#### POST /api/auth/register
-**Descripción:** Registrar nuevo usuario
+#### ~~POST /api/auth/register~~ (ELIMINADO - Seguridad Forense)
+**Estado:** DEPRECADO / ELIMINADO
+
+**Razón:**
+```
+⚠️ Este endpoint ha sido ELIMINADO por razones de seguridad forense.
+En un sistema de identificación de ADN, el registro público representa:
+- Riesgo de acceso no autorizado
+- Falta de control sobre identidad de usuarios
+- Imposibilidad de garantizar cadena de custodia
+- Incumplimiento de protocolos forenses
+
+ALTERNATIVA: Solo administradores pueden crear usuarios mediante
+el endpoint /api/admin/usuarios/crear (ver sección Administración)
+```
+
+---
+
+#### POST /api/admin/usuarios/crear
+**Descripción:** Crear usuario (SOLO ADMINISTRADORES)
+
+**Headers:**
+```
+Authorization: Bearer {admin_token}
+```
 
 **Request Body:**
 ```json
@@ -936,17 +987,21 @@ INSERT INTO sospechosos (nombre_completo, cedula, cadena_adn, fuente_muestra, us
 ```json
 {
   "success": true,
-  "message": "Usuario creado exitosamente",
+  "message": "Usuario creado exitosamente por administrador",
   "data": {
     "id": 42,
     "nombre": "Carlos Ramirez",
     "email": "carlos.ramirez@pnp.gob.pe",
-    "rol": "perito"
+    "rol": "perito",
+    "activo": true,
+    "creadoEn": "2025-10-29T14:30:00Z"
   }
 }
 ```
 
 **Errores:**
+- 401: No autenticado
+- 403: Usuario no es administrador
 - 400: Email ya existe
 - 400: Contraseña no cumple requisitos
 - 500: Error del servidor
@@ -1829,11 +1884,44 @@ describe('Performance Tests', () => {
 
 ## 🔐 CONSIDERACIONES DE SEGURIDAD
 
+### Modelo de Acceso Forense
+
+**⚠️ IMPORTANTE: Este sistema implementa un modelo de seguridad forense**
+
+```
+┌────────────────────────────────────────────────────────────┐
+│ MODELO TRADICIONAL (NO FORENSE - INSEGURO)                │
+│ ❌ Registro público → Cualquiera puede crear cuenta       │
+│ ❌ Sin control de identidad                               │
+│ ❌ Imposible garantizar cadena de custodia                │
+└────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────┐
+│ MODELO FORENSE (IMPLEMENTADO - SEGURO)                    │
+│ ✅ Solo administradores crean cuentas                     │
+│ ✅ Verificación de identidad previo a acceso             │
+│ ✅ Trazabilidad completa de todas las acciones           │
+│ ✅ Cumplimiento de protocolos forenses                   │
+└────────────────────────────────────────────────────────────┘
+```
+
+**Flujo de Incorporación de Personal:**
+```
+1. Personal autorizado solicita acceso al sistema
+2. Administrador verifica identidad y autorización
+3. Administrador crea cuenta mediante endpoint protegido
+4. Usuario recibe credenciales de acceso
+5. Usuario hace login y puede operar
+```
+
 ### Autenticación y Autorización
+- ✅ **NO hay registro público** (eliminado por seguridad forense)
+- ✅ **Solo administradores** pueden crear usuarios
 - ✅ JWT con expiración de 24 horas
 - ✅ Refresh tokens para sesiones largas
 - ✅ Contraseñas hasheadas con bcrypt (10 rounds)
 - ✅ Validación de fuerza de contraseña
+- ✅ Control de acceso basado en roles (RBAC)
 
 ### Protección de Datos
 - ✅ HTTPS obligatorio en producción

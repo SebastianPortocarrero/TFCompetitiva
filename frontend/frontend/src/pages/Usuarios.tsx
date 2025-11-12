@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,39 +7,101 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { mockRegisteredUsers, RegisteredUser } from '@/data/mockData';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+interface Usuario {
+  id: string;
+  nombre: string;
+  email: string;
+  rol: 'admin' | 'perito' | 'investigador';
+  activo: boolean;
+  creadoEn: string;
+}
 
 const Usuarios = () => {
-  const [users, setUsers] = useState<RegisteredUser[]>(mockRegisteredUsers);
+  const [users, setUsers] = useState<Usuario[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
+    nombre: '',
     email: '',
-    role: 'Perito' as 'Perito' | 'Investigador',
+    rol: 'perito' as 'admin' | 'perito' | 'investigador',
     password: '',
   });
 
-  const handleRegister = () => {
-    if (!formData.name || !formData.email || !formData.password) {
+  useEffect(() => {
+    fetchUsuarios();
+  }, []);
+
+  const fetchUsuarios = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/admin/usuarios?limit=100`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al cargar usuarios');
+      }
+
+      const data = await response.json();
+      setUsers(data.data?.usuarios || []);
+    } catch (error: any) {
+      toast.error(error.message || 'Error al cargar usuarios');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!formData.nombre || !formData.email || !formData.password) {
       toast.error('Complete todos los campos');
       return;
     }
 
-    const newUser: RegisteredUser = {
-      id: `${users.length + 1}`,
-      name: formData.name,
-      email: formData.email,
-      role: formData.role,
-      status: 'active',
-      createdDate: new Date().toISOString().split('T')[0],
-    };
+    setSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/admin/usuarios`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
 
-    setUsers([...users, newUser]);
-    toast.success('Usuario registrado correctamente');
-    setOpen(false);
-    setFormData({ name: '', email: '', role: 'Perito', password: '' });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al registrar usuario');
+      }
+
+      toast.success('Usuario registrado correctamente');
+      setOpen(false);
+      setFormData({ nombre: '', email: '', rol: 'perito', password: '' });
+
+      // Recargar lista de usuarios
+      fetchUsuarios();
+    } catch (error: any) {
+      toast.error(error.message || 'Error al registrar usuario');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const mapRolToDisplay = (rol: string): string => {
+    const roleMap: Record<string, string> = {
+      'admin': 'Administrador',
+      'perito': 'Perito',
+      'investigador': 'Investigador',
+    };
+    return roleMap[rol] || rol;
   };
 
   return (
@@ -55,7 +117,7 @@ const Usuarios = () => {
       <Card className="glass-card">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Usuarios Registrados ({users.length})</CardTitle>
+            <CardTitle>Usuarios Registrados ({loading ? '...' : users.length})</CardTitle>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button className="btn-glow bg-gradient-primary">
@@ -69,12 +131,13 @@ const Usuarios = () => {
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nombre Completo</Label>
+                    <Label htmlFor="nombre">Nombre Completo</Label>
                     <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      id="nombre"
+                      value={formData.nombre}
+                      onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                       placeholder="Juan Pérez"
+                      disabled={submitting}
                     />
                   </div>
                   <div className="space-y-2">
@@ -85,20 +148,23 @@ const Usuarios = () => {
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="usuario@pnp.gob.pe"
+                      disabled={submitting}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="role">Rol</Label>
+                    <Label htmlFor="rol">Rol</Label>
                     <Select
-                      value={formData.role}
-                      onValueChange={(value) => setFormData({ ...formData, role: value as 'Perito' | 'Investigador' })}
+                      value={formData.rol}
+                      onValueChange={(value) => setFormData({ ...formData, rol: value as 'admin' | 'perito' | 'investigador' })}
+                      disabled={submitting}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Perito">Perito</SelectItem>
-                        <SelectItem value="Investigador">Investigador</SelectItem>
+                        <SelectItem value="admin">Administrador</SelectItem>
+                        <SelectItem value="perito">Perito</SelectItem>
+                        <SelectItem value="investigador">Investigador</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -110,10 +176,22 @@ const Usuarios = () => {
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       placeholder="••••••"
+                      disabled={submitting}
                     />
                   </div>
-                  <Button onClick={handleRegister} className="w-full btn-glow bg-gradient-primary">
-                    Registrar
+                  <Button
+                    onClick={handleRegister}
+                    className="w-full btn-glow bg-gradient-primary"
+                    disabled={submitting}
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Registrando...
+                      </>
+                    ) : (
+                      'Registrar'
+                    )}
                   </Button>
                 </div>
               </DialogContent>
@@ -121,42 +199,58 @@ const Usuarios = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4">Nombre</th>
-                  <th className="text-left py-3 px-4">Correo</th>
-                  <th className="text-left py-3 px-4">Rol</th>
-                  <th className="text-left py-3 px-4">Estado</th>
-                  <th className="text-left py-3 px-4">Fecha Registro</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user, index) => (
-                  <motion.tr
-                    key={user.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="border-b border-border/50 hover:bg-muted/30"
-                  >
-                    <td className="py-3 px-4 font-medium">{user.name}</td>
-                    <td className="py-3 px-4">{user.email}</td>
-                    <td className="py-3 px-4">
-                      <Badge variant="outline">{user.role}</Badge>
-                    </td>
-                    <td className="py-3 px-4">
-                      <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
-                        {user.status === 'active' ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4 text-muted-foreground">{user.createdDate}</td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-4">Nombre</th>
+                    <th className="text-left py-3 px-4">Correo</th>
+                    <th className="text-left py-3 px-4">Rol</th>
+                    <th className="text-left py-3 px-4">Estado</th>
+                    <th className="text-left py-3 px-4">Fecha Registro</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                        No hay usuarios registrados
+                      </td>
+                    </tr>
+                  ) : (
+                    users.map((user, index) => (
+                      <motion.tr
+                        key={user.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="border-b border-border/50 hover:bg-muted/30"
+                      >
+                        <td className="py-3 px-4 font-medium">{user.nombre}</td>
+                        <td className="py-3 px-4">{user.email}</td>
+                        <td className="py-3 px-4">
+                          <Badge variant="outline">{mapRolToDisplay(user.rol)}</Badge>
+                        </td>
+                        <td className="py-3 px-4">
+                          <Badge variant={user.activo ? 'default' : 'secondary'}>
+                            {user.activo ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4 text-muted-foreground">
+                          {new Date(user.creadoEn).toLocaleDateString('es-ES')}
+                        </td>
+                      </motion.tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

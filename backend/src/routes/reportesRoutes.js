@@ -3,9 +3,16 @@ const { param } = require('express-validator');
 
 const router = express.Router();
 
-const { generar, descargar } = require('../controllers/reportesController');
+const { generar, descargar, listar } = require('../controllers/reportesController');
 const { proteger, autorizar } = require('../middlewares/auth');
 const { manejarErrores, validarId } = require('../middlewares/validacion');
+
+router.get(
+  '/',
+  proteger,
+  autorizar('admin', 'perito', 'investigador'),
+  listar
+);
 
 router.post(
   '/generar/:busquedaId',

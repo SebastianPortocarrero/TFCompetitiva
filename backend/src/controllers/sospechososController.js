@@ -1,5 +1,6 @@
 const fs = require('fs').promises;
 const { parse } = require('csv-parse/sync');
+const XLSX = require('xlsx');
 
 const Sospechoso = require('../models/Sospechoso');
 const { ErrorAPI } = require('../middlewares/errorHandler');
@@ -11,78 +12,146 @@ const limpiarArchivoTemporal = async (ruta) => {
   } catch (error) {}
 };
 
-exports.cargaMasiva = async (req, res, next) => {
-  const rutaArchivo = req.file?.path;
+const parsearArchivo = async (rutaArchivo) => {
+  const extension = rutaArchivo.toLowerCase().slice(rutaArchivo.lastIndexOf('.'));
 
-  try {
-    if (!rutaArchivo) {
-      throw new ErrorAPI('Debe adjuntar un archivo CSV', 400);
-    }
-
+  if (extension === '.csv') {
+    // Parsear CSV
     const contenido = await fs.readFile(rutaArchivo, 'utf8');
-    const registros = parse(contenido, {
+    return parse(contenido, {
       columns: true,
       skip_empty_lines: true,
       trim: true
     });
+  } else if (extension === '.xlsx' || extension === '.xls') {
+    // Parsear Excel
+    const workbook = XLSX.readFile(rutaArchivo);
+    const sheetName = workbook.SheetNames[0]; // Usar la primera hoja
+    const worksheet = workbook.Sheets[sheetName];
+    return XLSX.utils.sheet_to_json(worksheet);
+  } else {
+    throw new ErrorAPI('Formato de archivo no soportado', 400);
+  }
+};
 
-    let insertados = 0;
-    let actualizados = 0;
-    const errores = [];
-    const operaciones = [];
-    const ahora = new Date();
+// Procesar un chunk de registros
+const procesarChunk = async (registros, usuarioId, erroresGlobales, offsetLinea) => {
+  const operaciones = [];
+  const ahora = new Date();
 
-    registros.forEach((row, index) => {
-      const nombre = row.nombre_completo || row.nombre || '';
-      const cedula = row.cedula || '';
-      const cadena = row.cadena_adn || row.cadena || '';
-      const fuente = row.fuente_muestra || row.fuente || undefined;
-      const observaciones = row.observaciones || undefined;
+  registros.forEach((row, index) => {
+    const nombre = row.nombre_completo || row.nombre || '';
+    const cedula = Number(row.cedula);
+    const cadena = (row.cadena_adn || row.cadena || '').toUpperCase().trim();
+    const fuente = row.fuente_muestra || row.fuente || undefined;
+    const observaciones = row.observaciones || undefined;
 
-      if (!nombre || !cedula || !cadena) {
-        errores.push({ linea: index + 2, motivo: 'Campos requeridos faltantes' });
-        return;
-      }
-
-      if (!Sospechoso.validarCadenaADN(cadena)) {
-        errores.push({ linea: index + 2, motivo: 'Cadena ADN inválida' });
-        return;
-      }
-
-      operaciones.push({
-        updateOne: {
-          filter: { cedula },
-          update: {
-            $set: {
-              nombreCompleto: nombre,
-              cedula,
-              cadenaADN: cadena,
-              longitudCadena: cadena.length,
-              fuenteMuestra: fuente || 'Registro Nacional',
-              observaciones: observaciones || undefined,
-              activo: true,
-              fechaActualizacion: ahora,
-              usuarioRegistroId: req.usuario.id,
-              updatedAt: ahora
-            },
-            $setOnInsert: {
-              createdAt: ahora,
-              updatedAt: ahora
-            }
-          },
-          upsert: true
-        }
-      });
-    });
-
-    if (!operaciones.length) {
-      throw new ErrorAPI('El archivo no contiene registros válidos', 400);
+    if (!nombre || !cedula || isNaN(cedula) || !cadena) {
+      erroresGlobales.push({ linea: offsetLinea + index + 2, motivo: 'Campos requeridos faltantes o cédula inválida' });
+      return;
     }
 
-    const resultado = await Sospechoso.bulkWrite(operaciones);
+    if (!Sospechoso.validarCadenaADN(cadena)) {
+      erroresGlobales.push({ linea: offsetLinea + index + 2, motivo: 'Cadena ADN inválida' });
+      return;
+    }
 
-    insertados = resultado.upsertedCount || 0;
-    actualizados = resultado.modifiedCount || 0;
+    operaciones.push({
+      updateOne: {
+        filter: { cedula },
+        update: {
+          $set: {
+            nombreCompleto: nombre,
+            cedula,
+            cadenaADN: cadena,
+            longitudCadena: cadena.length,
+            fuenteMuestra: fuente || 'Registro Nacional',
+            observaciones: observaciones || undefined,
+            activo: true,
+            fechaActualizacion: ahora,
+            usuarioRegistroId: usuarioId,
+            updatedAt: ahora
+          },
+          $setOnInsert: {
+            createdAt: ahora
+          }
+        },
+        upsert: true
+      }
+    });
+  });
+
+  if (operaciones.length === 0) {
+    return { upsertedCount: 0, modifiedCount: 0 };
+  }
+
+  return await Sospechoso.bulkWrite(operaciones);
+};
+
+exports.cargaMasiva = async (req, res, next) => {
+  const rutaArchivo = req.file?.path;
+  const inicioTotal = Date.now();
+
+  try {
+    if (!rutaArchivo) {
+      throw new ErrorAPI('Debe adjuntar un archivo CSV o Excel', 400);
+    }
+
+    console.log('🧬 Iniciando carga masiva de sospechosos...');
+    const registros = await parsearArchivo(rutaArchivo);
+    console.log(`   Total de registros: ${registros.length}`);
+
+    const errores = [];
+    let insertados = 0;
+    let actualizados = 0;
+
+    // DETECCIÓN AUTOMÁTICA: Usar paralelo solo si hay muchos registros
+    const UMBRAL_PARALELO = 1000;
+    const CHUNK_SIZE = 500;
+
+    if (registros.length < UMBRAL_PARALELO) {
+      // ============================================
+      // MODO SECUENCIAL (< 1000 registros)
+      // ============================================
+      console.log('   Modo: Secuencial (archivo pequeño)');
+
+      const resultado = await procesarChunk(registros, req.usuario.id, errores, 0);
+      insertados = resultado.upsertedCount || 0;
+      actualizados = resultado.modifiedCount || 0;
+
+    } else {
+      // ============================================
+      // MODO PARALELO (≥ 1000 registros)
+      // ============================================
+      console.log(`   Modo: Paralelo en chunks de ${CHUNK_SIZE}`);
+
+      // Dividir en chunks
+      const chunks = [];
+      for (let i = 0; i < registros.length; i += CHUNK_SIZE) {
+        chunks.push({
+          data: registros.slice(i, i + CHUNK_SIZE),
+          offset: i
+        });
+      }
+      console.log(`   Chunks creados: ${chunks.length}`);
+
+      // Procesar chunks en paralelo
+      const resultados = await Promise.all(
+        chunks.map(chunk => procesarChunk(chunk.data, req.usuario.id, errores, chunk.offset))
+      );
+
+      // Sumar resultados
+      resultados.forEach(resultado => {
+        insertados += resultado.upsertedCount || 0;
+        actualizados += resultado.modifiedCount || 0;
+      });
+    }
+
+    const tiempoTotal = Date.now() - inicioTotal;
+    console.log(`✅ Carga completada en ${tiempoTotal}ms`);
+    console.log(`   Insertados: ${insertados}`);
+    console.log(`   Actualizados: ${actualizados}`);
+    console.log(`   Errores: ${errores.length}`);
 
     res.status(200).json({
       success: true,
@@ -92,7 +161,8 @@ exports.cargaMasiva = async (req, res, next) => {
         insertados,
         actualizados: Math.max(actualizados, 0),
         errores,
-        tiempoMs: Date.now() - ahora.getTime()
+        tiempoMs: tiempoTotal,
+        modoParalelo: registros.length >= UMBRAL_PARALELO
       }
     });
   } catch (error) {

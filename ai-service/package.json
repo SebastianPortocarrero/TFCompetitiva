@@ -1,0 +1,22 @@
+{
+  "name": "ai-service",
+  "version": "1.0.0",
+  "description": "Microservicio de IA modular y reutilizable con Ollama/LLama",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "keywords": ["ai", "llama", "ollama", "microservice", "chat"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "ollama": "^0.6.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}

@@ -13,7 +13,6 @@ import BusquedaADN from "./pages/BusquedaADN";
 import Sospechosos from "./pages/Sospechosos";
 import Historial from "./pages/Historial";
 import Reportes from "./pages/Reportes";
-import Estadisticas from "./pages/Estadisticas";
 import Usuarios from "./pages/Usuarios";
 import Configuracion from "./pages/Configuracion";
 import NotFound from "./pages/NotFound";
@@ -63,7 +62,6 @@ const AppRoutes = () => {
         <Route path="sospechosos" element={<Sospechosos />} />
         <Route path="historial" element={<Historial />} />
         <Route path="reportes" element={<Reportes />} />
-        <Route path="estadisticas" element={<Estadisticas />} />
         <Route
           path="usuarios"
           element={

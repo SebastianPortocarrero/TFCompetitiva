@@ -46,6 +46,48 @@ exports.generar = async (req, res, next) => {
   }
 };
 
+exports.listar = async (req, res, next) => {
+  try {
+    const filtro = {};
+
+    // Si no es admin, solo ver sus propios reportes
+    if (req.usuario.rol !== 'admin') {
+      filtro.generadoPorUsuarioId = req.usuario.id;
+    }
+
+    const reportes = await Reporte.find(filtro)
+      .populate({
+        path: 'busquedaId',
+        select: 'casoNumero patrones totalCoincidencias algoritmoUsado'
+      })
+      .sort({ fechaGeneracion: -1 })
+      .limit(100);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        reportes: reportes.map(r => ({
+          id: r.id,
+          busquedaId: r.busquedaId?._id,
+          rutaArchivo: r.rutaArchivo,
+          hashSha256Pdf: r.hashSha256Pdf,
+          tamanoBytes: r.tamanoBytes,
+          fechaGeneracion: r.fechaGeneracion,
+          numeroDescargas: r.numeroDescargas,
+          busqueda: r.busquedaId ? {
+            casoNumero: r.busquedaId.casoNumero,
+            patrones: r.busquedaId.patrones,
+            totalCoincidencias: r.busquedaId.totalCoincidencias,
+            algoritmoUsado: r.busquedaId.algoritmoUsado
+          } : null
+        }))
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.descargar = async (req, res, next) => {
   try {
     const reporte = await Reporte.findById(req.params.id).populate({

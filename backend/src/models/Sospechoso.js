@@ -9,11 +9,11 @@ const sospechososSchema = new mongoose.Schema({
   },
 
   cedula: {
-    type: String,
+    type: Number,
     required: [true, 'La cédula es obligatoria'],
     unique: true,
-    trim: true,
-    maxlength: [20, 'La cédula no puede exceder 20 caracteres']
+    min: [10000000, 'La cédula debe tener al menos 8 dígitos'],
+    max: [99999999, 'La cédula debe tener máximo 8 dígitos']
   },
 
   cadenaADN: {

@@ -21,7 +21,7 @@
  * - Fácil de cambiar (si cambias el .exe, solo modificas esto)
  */
 
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
 const fs = require('fs').promises;
 const path = require('path');
 const crypto = require('crypto');
@@ -65,6 +65,8 @@ exports.ejecutarBusqueda = async (patrones, sospechosos) => {
     // El comando que vamos a ejecutar es:
     // ./busqueda_adn.exe "PATRON1,PATRON2" "./temp/archivo.csv"
 
+    // IMPORTANTE: En Windows, las comillas dobles pueden causar problemas
+    // con caracteres especiales. Usamos comillas simples o escapamos.
     const patronesStr = patrones.join(',');
     // Si patrones = ["ATCG", "GGCC"]
     // patronesStr = "ATCG,GGCC"
@@ -72,22 +74,34 @@ exports.ejecutarBusqueda = async (patrones, sospechosos) => {
     const cppEnginePath = process.env.CPP_ENGINE_PATH || '../cpp-engine/build/busqueda_adn.exe';
     // Path al ejecutable (desde .env)
 
-    // Construir comando
-    // IMPORTANTE: Usar comillas para manejar espacios en rutas
-    const comando = `"${cppEnginePath}" "${patronesStr}" "${archivoTemporal}"`;
+    // Normalizar rutas para que funcionen en Windows (usar forward slashes)
+    const archivoTemporalNormalizado = archivoTemporal.replace(/\\/g, '/');
+    const cppEnginePathNormalizado = cppEnginePath.replace(/\\/g, '/');
+
+    // Log para debugging
+    console.log('🧬 Ejecutando motor C++:');
+    console.log('   Ejecutable:', cppEnginePathNormalizado);
+    console.log('   Arg 1 (patrones):', patronesStr);
+    console.log('   Arg 2 (CSV):', archivoTemporalNormalizado);
+    console.log('   Patrones array:', patrones);
+    console.log('   Num sospechosos:', sospechosos.length);
 
     // ============================================
     // PASO 3: EJECUTAR EL .EXE
     // ============================================
     //
-    // ¿Qué es child_process.exec()?
-    // Una función de Node.js que ejecuta comandos del sistema operativo
-    // (como si escribieras el comando en CMD o PowerShell)
+    // Usar execFile en lugar de exec para evitar problemas con el shell de Windows
+    // execFile ejecuta el archivo directamente sin pasar por cmd.exe
+    // Los argumentos se pasan como array, no como string concatenado
     //
-    // ¿Por qué usarlo?
-    // Porque necesitamos ejecutar un programa externo (.exe)
+    // Args: [patronesStr, rutaCSV]
+    // Ejemplo: ["ATCGA,TCGAT", "temp/sospechosos.csv"]
 
-    const resultado = await ejecutarComando(comando);
+    const resultado = await ejecutarComandoDirecto(
+      cppEnginePathNormalizado,
+      [patronesStr, archivoTemporalNormalizado]
+    );
+    console.log('✅ Motor C++ ejecutado exitosamente');
 
     // ============================================
     // PASO 4: PARSEAR JSON
@@ -211,15 +225,17 @@ async function crearCSVTemporal(sospechosos) {
 
 /**
  * ============================================
- * FUNCIÓN AUXILIAR: EJECUTAR COMANDO
+ * FUNCIÓN AUXILIAR: EJECUTAR COMANDO DIRECTO
  * ============================================
  *
- * Ejecuta un comando del sistema y retorna su output.
+ * Ejecuta un archivo ejecutable directamente (sin shell intermediario)
+ * Esto evita problemas con caracteres especiales en Windows
  *
- * @param {String} comando - Comando a ejecutar
+ * @param {String} ejecutable - Ruta al ejecutable
+ * @param {Array<String>} args - Array de argumentos
  * @returns {Promise<String>} Output del comando (stdout)
  */
-function ejecutarComando(comando) {
+function ejecutarComandoDirecto(ejecutable, args) {
   return new Promise((resolve, reject) => {
     // ============================================
     // OPCIONES DE EJECUCIÓN
@@ -241,12 +257,19 @@ function ejecutarComando(comando) {
     // EJECUTAR
     // ============================================
     //
-    // exec() toma 3 parámetros:
-    // 1. comando: string del comando a ejecutar
-    // 2. opciones: objeto con configuración
-    // 3. callback: función que se ejecuta cuando termina
+    // execFile() ejecuta el archivo directamente sin pasar por cmd.exe
+    // Esto evita problemas con:
+    // - Comillas dobles
+    // - Caracteres especiales (comas, pipes, etc.)
+    // - Variables de entorno de Windows
+    //
+    // Parámetros:
+    // 1. ejecutable: ruta al .exe
+    // 2. args: array de argumentos ["arg1", "arg2"]
+    // 3. opciones: timeout, buffer, etc.
+    // 4. callback: función que se ejecuta cuando termina
 
-    exec(comando, opciones, (error, stdout, stderr) => {
+    execFile(ejecutable, args, opciones, (error, stdout, stderr) => {
       // ¿Qué es stdout y stderr?
       // stdout = Standard Output (salida normal del programa)
       // stderr = Standard Error (mensajes de error del programa)
@@ -257,6 +280,23 @@ function ejecutarComando(comando) {
         // - .exe no encontrado
         // - Timeout
         // - .exe crasheó
+        console.error('❌ Error ejecutando motor C++:', error.message);
+        console.error('   stdout:', stdout);
+        console.error('   stderr:', stderr);
+
+        // Intentar parsear JSON de error del stdout
+        if (stdout) {
+          try {
+            const errorJSON = JSON.parse(stdout);
+            if (errorJSON.error) {
+              reject(new Error(`Motor C++: ${errorJSON.error} - ${errorJSON.detalles || ''}`));
+              return;
+            }
+          } catch (e) {
+            // No es JSON válido, continuar con error normal
+          }
+        }
+
         reject(new Error(`Error ejecutando motor C++: ${error.message}`));
         return;
       }
@@ -264,7 +304,7 @@ function ejecutarComando(comando) {
       if (stderr) {
         // El .exe escribió en stderr
         // Esto podría ser un warning o error del programa
-        console.warn('Warning del motor C++:', stderr);
+        console.warn('⚠️  Warning del motor C++:', stderr);
       }
 
       // stdout contiene el JSON que el .exe imprimió con cout
@@ -320,13 +360,16 @@ async function calcularHashArchivo(rutaArchivo) {
  * 'O"Brien' → "O""Brien"
  */
 function escaparCSV(valor) {
+  // Convertir a string (importante para números como cédulas)
+  const valorStr = String(valor);
+
   // Si no tiene caracteres especiales, retornar tal cual
-  if (!valor.includes(',') && !valor.includes('"') && !valor.includes('\n')) {
-    return valor;
+  if (!valorStr.includes(',') && !valorStr.includes('"') && !valorStr.includes('\n')) {
+    return valorStr;
   }
 
   // Duplicar comillas
-  const escapado = valor.replace(/"/g, '""');
+  const escapado = valorStr.replace(/"/g, '""');
 
   // Envolver en comillas
   return `"${escapado}"`;

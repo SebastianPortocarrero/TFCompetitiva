@@ -33,10 +33,10 @@ exports.validarLogin = [
 exports.validarSospechoso = [
   body('nombreCompleto').trim().notEmpty().withMessage('El nombre completo es obligatorio')
     .isLength({ max: 200 }).withMessage('El nombre no puede exceder 200 caracteres'),
-  body('cedula').trim().notEmpty().withMessage('La cédula es obligatoria')
-    .isLength({ max: 20 }).withMessage('La cédula no puede exceder 20 caracteres'),
+  body('cedula').notEmpty().withMessage('La cédula es obligatoria')
+    .isInt({ min: 10000000, max: 99999999 }).withMessage('La cédula debe ser un número de 8 dígitos').toInt(),
   body('cadenaADN').trim().notEmpty().withMessage('La cadena de ADN es obligatoria')
-    .matches(/^[ATCG]+$/).withMessage('La cadena de ADN solo puede contener A, T, C, G')
+    .matches(/^[ATCG]+$/i).withMessage('La cadena de ADN solo puede contener A, T, C, G')
     .isLength({ min: 20 }).withMessage('La cadena de ADN debe tener al menos 20 caracteres'),
   body('fuenteMuestra').optional().trim().isLength({ max: 100 }).withMessage('La fuente de muestra no puede exceder 100 caracteres'),
   body('observaciones').optional().trim().isLength({ max: 500 }).withMessage('Las observaciones no pueden exceder 500 caracteres')
@@ -45,10 +45,10 @@ exports.validarSospechoso = [
 exports.validarSospechosoActualizacion = [
   body('nombreCompleto').optional().trim().notEmpty().withMessage('El nombre completo es obligatorio')
     .isLength({ max: 200 }).withMessage('El nombre no puede exceder 200 caracteres'),
-  body('cedula').optional().trim().notEmpty().withMessage('La cédula es obligatoria')
-    .isLength({ max: 20 }).withMessage('La cédula no puede exceder 20 caracteres'),
+  body('cedula').optional().notEmpty().withMessage('La cédula es obligatoria')
+    .isInt({ min: 10000000, max: 99999999 }).withMessage('La cédula debe ser un número de 8 dígitos').toInt(),
   body('cadenaADN').optional().trim().notEmpty().withMessage('La cadena de ADN es obligatoria')
-    .matches(/^[ATCG]+$/).withMessage('La cadena de ADN solo puede contener A, T, C, G')
+    .matches(/^[ATCG]+$/i).withMessage('La cadena de ADN solo puede contener A, T, C, G')
     .isLength({ min: 20 }).withMessage('La cadena de ADN debe tener al menos 20 caracteres'),
   body('fuenteMuestra').optional().trim().isLength({ max: 100 }).withMessage('La fuente de muestra no puede exceder 100 caracteres'),
   body('observaciones').optional().trim().isLength({ max: 500 }).withMessage('Las observaciones no pueden exceder 500 caracteres'),

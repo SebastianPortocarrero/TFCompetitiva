@@ -8,6 +8,7 @@ const path = require('path');
 const fs = require('fs');
 
 const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const sospechososRoutes = require('./routes/sospechososRoutes');
 const busquedasRoutes = require('./routes/busquedasRoutes');
 const reportesRoutes = require('./routes/reportesRoutes');
@@ -52,6 +53,7 @@ app.use(
 app.use('/uploads', express.static(path.resolve(uploadsDir)));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/sospechosos', sospechososRoutes);
 app.use('/api/busquedas', busquedasRoutes);
 app.use('/api/reportes', reportesRoutes);

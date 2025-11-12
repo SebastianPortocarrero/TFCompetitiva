@@ -1,5 +1,5 @@
 import { NavLink } from '@/components/NavLink';
-import { Home, Users, History, FileText, BarChart3, Settings, UserCog } from 'lucide-react';
+import { Home, Users, History, FileText, Settings, UserCog } from 'lucide-react';
 import logo from '../img/logo.webp';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,12 +13,12 @@ const Sidebar = () => {
     { name: 'Sospechosos', icon: Users, path: '/sospechosos' },
     { name: 'Historial', icon: History, path: '/historial' },
     { name: 'Reportes', icon: FileText, path: '/reportes' },
-    { name: 'Estadísticas', icon: BarChart3, path: '/estadisticas' },
     { name: 'Configuración', icon: Settings, path: '/configuracion' },
   ];
 
+  // Agregar Usuarios solo para administradores
   if (user?.role === 'Administrador') {
-    menuItems.splice(6, 0, { name: 'Usuarios', icon: UserCog, path: '/usuarios' });
+    menuItems.splice(5, 0, { name: 'Usuarios', icon: UserCog, path: '/usuarios' });
   }
 
   return (
