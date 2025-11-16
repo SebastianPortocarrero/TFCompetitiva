@@ -92,15 +92,6 @@ const Login = () => {
               {loading ? 'Verificando...' : 'Iniciar Sesión'}
             </Button>
           </form>
-
-          <div className="mt-6 p-4 bg-muted/30 rounded-lg">
-            <p className="text-xs text-muted-foreground mb-2">Credenciales de prueba:</p>
-            <div className="space-y-1 text-xs">
-              <p><strong>Admin:</strong> admin@pnp.gob.pe / 123456</p>
-              <p><strong>Perito:</strong> perito@pnp.gob.pe / 123456</p>
-              <p><strong>Investigador:</strong> investigador@pnp.gob.pe / 123456</p>
-            </div>
-          </div>
         </div>
       </motion.div>
     </div>

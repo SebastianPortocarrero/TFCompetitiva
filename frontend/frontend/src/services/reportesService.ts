@@ -7,8 +7,12 @@ export interface Reporte {
   hashSha256Pdf: string;
   tamanoBytes: number;
   fechaGeneracion: string;
-  generadoPorUsuarioId: string;
   numeroDescargas: number;
+  generadoPor?: {
+    nombre: string;
+    email: string;
+    rol: string;
+  };
   busqueda?: {
     casoNumero: string;
     patrones: string[];

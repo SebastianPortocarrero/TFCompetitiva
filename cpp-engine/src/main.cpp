@@ -3,27 +3,27 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <set>
 #include "../include/kmp.h"
 #include "../include/rabin_karp.h"
 #include "../include/aho_corasick.h"
 #include "../include/csv_parser.h"
 #include "../include/algorithm_selector.h"
 #include "../include/json_output.h"
+using namespace std;
 
-/**
- * Divide una cadena por un delimitador
- */
-std::vector<std::string> dividirPorComa(const std::string& str) {
-    std::vector<std::string> resultado;
-    std::stringstream ss(str);
-    std::string item;
 
-    while (std::getline(ss, item, ',')) {
+vector<string> dividirPorComa(const string& str) {
+    vector<string> resultado;
+    stringstream ss(str);
+    string item;
+
+    while (getline(ss, item, ',')) {
         // Eliminar espacios en blanco, tabs, retornos de carro y saltos de línea
         size_t inicio = item.find_first_not_of(" \t\r\n");
         size_t fin = item.find_last_not_of(" \t\r\n");
 
-        if (inicio != std::string::npos && fin != std::string::npos) {
+        if (inicio != string::npos && fin != string::npos) {
             resultado.push_back(item.substr(inicio, fin - inicio + 1));
         }
     }
@@ -34,97 +34,97 @@ std::vector<std::string> dividirPorComa(const std::string& str) {
 int main(int argc, char* argv[]) {
     // Validar argumentos
     if (argc != 3) {
-        std::string error = JSONOutput::generarError(
+        string error = JSONOutput::generarError(
             "Argumentos insuficientes",
             "INVALID_ARGUMENTS",
             "Uso: ./busqueda_adn <patron1[,patron2,...]> <ruta_csv>"
         );
-        std::cout << error << std::endl;
+        cout << error << endl;
         return 1;
     }
 
-    std::string patronesInput = argv[1];
-    std::string rutaCSV = argv[2];
+    string patronesInput = argv[1];
+    string rutaCSV = argv[2];
 
     // Inicio del timer
-    auto inicio = std::chrono::high_resolution_clock::now();
+    auto inicio = chrono::high_resolution_clock::now();
 
     try {
         // DEBUG: Mostrar lo que recibimos
-        std::cerr << "[DEBUG] Argumento recibido (argv[1]): '" << patronesInput << "'" << std::endl;
-        std::cerr << "[DEBUG] Longitud: " << patronesInput.length() << std::endl;
-        std::cerr << "[DEBUG] Bytes (hex): ";
+        cerr << "[DEBUG] Argumento recibido (argv[1]): '" << patronesInput << "'" << endl;
+        cerr << "[DEBUG] Longitud: " << patronesInput.length() << endl;
+        cerr << "[DEBUG] Bytes (hex): ";
         for (unsigned char c : patronesInput) {
-            std::cerr << std::hex << (int)c << " ";
+            cerr << hex << (int)c << " ";
         }
-        std::cerr << std::dec << std::endl;
+        cerr << dec << endl;
 
         // Parsear patrones (pueden ser múltiples separados por coma)
-        std::vector<std::string> patrones = dividirPorComa(patronesInput);
+        vector<string> patrones = dividirPorComa(patronesInput);
 
         // DEBUG: Mostrar patrones parseados
-        std::cerr << "[DEBUG] Patrones parseados: " << patrones.size() << std::endl;
+        cerr << "[DEBUG] Patrones parseados: " << patrones.size() << endl;
         for (size_t i = 0; i < patrones.size(); i++) {
-            std::cerr << "[DEBUG] Patron " << i << ": '" << patrones[i] << "' (len=" << patrones[i].length() << ")" << std::endl;
-            std::cerr << "[DEBUG] Bytes: ";
+            cerr << "[DEBUG] Patron " << i << ": '" << patrones[i] << "' (len=" << patrones[i].length() << ")" << endl;
+            cerr << "[DEBUG] Bytes: ";
             for (unsigned char c : patrones[i]) {
-                std::cerr << std::hex << (int)c << " ";
+                cerr << hex << (int)c << " ";
             }
-            std::cerr << std::dec << std::endl;
+            cerr << dec << endl;
         }
 
         if (patrones.empty()) {
-            std::string error = JSONOutput::generarError(
+            string error = JSONOutput::generarError(
                 "No se especificaron patrones",
                 "EMPTY_PATTERN",
                 "Debe proporcionar al menos un patrón de ADN"
             );
-            std::cout << error << std::endl;
+            cout << error << endl;
             return 1;
         }
 
         // Validar todos los patrones
         for (size_t i = 0; i < patrones.size(); i++) {
-            const std::string& patron = patrones[i];
+            const string& patron = patrones[i];
 
-            std::cerr << "[DEBUG] Validando patron " << i << ": '" << patron << "'" << std::endl;
+            cerr << "[DEBUG] Validando patron " << i << ": '" << patron << "'" << endl;
 
             if (!CSVParser::validarCadenaADN(patron)) {
-                std::ostringstream msg;
+                ostringstream msg;
                 msg << "Patrón " << (i + 1) << " inválido: \"" << patron << "\"";
-                std::string error = JSONOutput::generarError(
+                string error = JSONOutput::generarError(
                     msg.str(),
                     "INVALID_PATTERN",
                     "Los patrones solo pueden contener los caracteres A, T, C, G"
                 );
-                std::cout << error << std::endl;
+                cout << error << endl;
                 return 1;
             }
 
-            if (patron.length() < 5 || patron.length() > 100) {
-                std::ostringstream msg;
+            if (patron.length() < 100 || patron.length() > 1000) {
+                ostringstream msg;
                 msg << "Patrón " << (i + 1) << " tiene longitud inválida: " << patron.length();
-                std::string error = JSONOutput::generarError(
+                string error = JSONOutput::generarError(
                     msg.str(),
                     "INVALID_PATTERN_LENGTH",
-                    "Cada patrón debe tener entre 5 y 100 caracteres"
+                    "Cada patrón debe tener entre 100 y 1000 caracteres"
                 );
-                std::cout << error << std::endl;
+                cout << error << endl;
                 return 1;
             }
         }
 
         // Parsear archivo CSV
-        std::vector<Sospechoso> sospechosos;
+        vector<Sospechoso> sospechosos;
         try {
             sospechosos = CSVParser::parsear(rutaCSV);
-        } catch (const std::exception& e) {
-            std::string error = JSONOutput::generarError(
+        } catch (const exception& e) {
+            string error = JSONOutput::generarError(
                 "Error al leer archivo CSV",
                 "FILE_ERROR",
-                std::string(e.what())
+                string(e.what())
             );
-            std::cout << error << std::endl;
+            cout << error << endl;
             return 1;
         }
 
@@ -142,22 +142,29 @@ int main(int argc, char* argv[]) {
         AlgorithmSelector::Algorithm algoritmoSeleccionado =
             AlgorithmSelector::seleccionar(numPatrones, longitudPromedioPatron, numSospechosos);
 
-        std::string nombreAlgoritmo = AlgorithmSelector::toString(algoritmoSeleccionado);
-        std::string criterioSeleccion = AlgorithmSelector::obtenerCriterio(
+        string nombreAlgoritmo = AlgorithmSelector::toString(algoritmoSeleccionado);
+        string criterioSeleccion = AlgorithmSelector::obtenerCriterio(
             algoritmoSeleccionado, numPatrones, longitudPromedioPatron, numSospechosos
         );
 
         // Buscar coincidencias en todos los sospechosos
-        std::vector<Coincidencia> coincidencias;
+        vector<Coincidencia> coincidencias;
+        set<string> cedulasEncontradas;  // Para evitar duplicados
 
         if (numPatrones >= 2) {
             // CASO: MÚLTIPLES PATRONES → Usar Aho-Corasick (búsqueda simultánea)
             for (const auto& sospechoso : sospechosos) {
-                std::vector<CoincidenciaMultiple> resultados =
+                // Si ya encontramos esta persona, saltarla
+                if (cedulasEncontradas.find(sospechoso.cedula) != cedulasEncontradas.end()) {
+                    continue;
+                }
+
+                vector<CoincidenciaMultiple> resultados =
                     AhoCorasick::buscarMultiple(sospechoso.cadenaADN, patrones);
 
-                // Convertir resultados a estructura final
-                for (const auto& res : resultados) {
+                // Solo registrar la PRIMERA coincidencia encontrada para esta persona
+                if (!resultados.empty()) {
+                    const auto& res = resultados[0];  // Primera coincidencia
                     Coincidencia coincidencia;
                     coincidencia.nombre = sospechoso.nombreCompleto;
                     coincidencia.cedula = sospechoso.cedula;
@@ -165,12 +172,13 @@ int main(int argc, char* argv[]) {
                     coincidencia.patron = patrones[res.patronId];
                     coincidencia.posicion = res.posicion;
                     coincidencias.push_back(coincidencia);
+                    cedulasEncontradas.insert(sospechoso.cedula);  // Marcar como encontrado
                 }
             }
 
         } else {
             // CASO: UN SOLO PATRÓN → Usar algoritmo seleccionado
-            const std::string& patron = patrones[0];
+            const string& patron = patrones[0];
 
             for (const auto& sospechoso : sospechosos) {
                 int posicion = -1;
@@ -204,11 +212,11 @@ int main(int argc, char* argv[]) {
         }
 
         // Fin del timer
-        auto fin = std::chrono::high_resolution_clock::now();
-        auto duracion = std::chrono::duration_cast<std::chrono::milliseconds>(fin - inicio);
+        auto fin = chrono::high_resolution_clock::now();
+        auto duracion = chrono::duration_cast<chrono::milliseconds>(fin - inicio);
 
         // Generar salida JSON
-        std::string salidaJSON = JSONOutput::generarExito(
+        string salidaJSON = JSONOutput::generarExito(
             patrones,
             nombreAlgoritmo,
             criterioSeleccion,
@@ -217,16 +225,16 @@ int main(int argc, char* argv[]) {
             duracion.count()
         );
 
-        std::cout << salidaJSON << std::endl;
+        cout << salidaJSON << endl;
         return 0;
 
-    } catch (const std::exception& e) {
-        std::string error = JSONOutput::generarError(
+    } catch (const exception& e) {
+        string error = JSONOutput::generarError(
             "Error inesperado",
             "UNEXPECTED_ERROR",
-            std::string(e.what())
+            string(e.what())
         );
-        std::cout << error << std::endl;
+        cout << error << endl;
         return 1;
     }
 }

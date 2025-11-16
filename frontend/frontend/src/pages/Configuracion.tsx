@@ -73,11 +73,11 @@ const Configuracion = () => {
             </div>
             <div className="flex justify-between py-2 border-b border-border/50">
               <span className="text-muted-foreground">Última actualización</span>
-              <span className="font-medium">15/06/2024</span>
+              <span className="font-medium">5/11/2025</span>
             </div>
             <div className="flex justify-between py-2 border-b border-border/50">
               <span className="text-muted-foreground">Base de datos</span>
-              <span className="font-medium">PostgreSQL 14.2</span>
+              <span className="font-medium">MongoDB</span>
             </div>
             <div className="flex justify-between py-2">
               <span className="text-muted-foreground">Estado del servidor</span>

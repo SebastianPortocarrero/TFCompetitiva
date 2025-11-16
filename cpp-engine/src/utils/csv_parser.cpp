@@ -67,10 +67,10 @@ std::vector<Sospechoso> CSVParser::parsear(const std::string& rutaArchivo) {
             );
         }
 
-        if (sospechoso.cadenaADN.length() < 20) {
+        if (sospechoso.cadenaADN.length() < 100) {
             throw std::runtime_error(
                 "Error en línea " + std::to_string(numeroLinea) +
-                ": cadena de ADN muy corta (mínimo 20 caracteres)"
+                ": cadena de ADN muy corta (mínimo 100 caracteres)"
             );
         }
 

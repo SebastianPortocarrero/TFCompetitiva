@@ -106,6 +106,9 @@ const Reportes = () => {
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         {new Date(reporte.fechaGeneracion).toLocaleString('es-PE')}
+                        {reporte.generadoPor && (
+                          <span className="ml-2">• Generado por: <span className="font-medium text-foreground">{reporte.generadoPor.nombre}</span></span>
+                        )}
                       </p>
                       <div className="flex gap-2 mt-1 flex-wrap">
                         {reporte.busqueda?.algoritmoUsado && (
@@ -124,6 +127,11 @@ const Reportes = () => {
                         <Badge variant="outline" className="text-xs">
                           {reporte.numeroDescargas} descargas
                         </Badge>
+                        {reporte.generadoPor && (
+                          <Badge variant="secondary" className="text-xs">
+                            {reporte.generadoPor.rol}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>

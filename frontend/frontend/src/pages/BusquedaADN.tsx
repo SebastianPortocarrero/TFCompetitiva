@@ -96,9 +96,9 @@ const BusquedaADN = () => {
       return;
     }
 
-    // Validar longitud (5-100 caracteres según backend)
-    if (cleanPattern.length < 5 || cleanPattern.length > 100) {
-      toast.error('El patrón debe tener entre 5 y 100 caracteres');
+    // Validar longitud (100-1000 caracteres según backend)
+    if (cleanPattern.length < 100 || cleanPattern.length > 1000) {
+      toast.error('El patrón debe tener entre 100 y 1000 caracteres');
       return;
     }
 
@@ -301,7 +301,7 @@ const BusquedaADN = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="pattern">Patrón de ADN * (5-100 caracteres, solo ATCG)</Label>
+            <Label htmlFor="pattern">Patrón de ADN * (100-1000 caracteres, solo ATCG)</Label>
             <div className="flex gap-2">
               <Input
                 id="pattern"

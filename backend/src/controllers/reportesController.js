@@ -16,7 +16,7 @@ exports.generar = async (req, res, next) => {
       throw new ErrorAPI('Búsqueda no encontrada', 404);
     }
 
-    if (req.usuario.rol !== 'admin' && busqueda.usuarioId && busqueda.usuarioId.id !== req.usuario.id) {
+    if (req.usuario.rol !== 'admin' && busqueda.usuarioId && !busqueda.usuarioId.equals(req.usuario._id)) {
       throw new ErrorAPI('No autorizado para generar el reporte', 403);
     }
 
@@ -27,7 +27,7 @@ exports.generar = async (req, res, next) => {
       rutaArchivo: resultadoPdf.nombreArchivo,
       hashSha256Pdf: resultadoPdf.hash,
       tamanoBytes: resultadoPdf.tamanoBytes,
-      generadoPorUsuarioId: req.usuario.id
+      generadoPorUsuarioId: req.usuario._id
     });
 
     res.status(200).json({
@@ -52,13 +52,17 @@ exports.listar = async (req, res, next) => {
 
     // Si no es admin, solo ver sus propios reportes
     if (req.usuario.rol !== 'admin') {
-      filtro.generadoPorUsuarioId = req.usuario.id;
+      filtro.generadoPorUsuarioId = req.usuario._id;
     }
 
     const reportes = await Reporte.find(filtro)
       .populate({
         path: 'busquedaId',
         select: 'casoNumero patrones totalCoincidencias algoritmoUsado'
+      })
+      .populate({
+        path: 'generadoPorUsuarioId',
+        select: 'nombre email rol'
       })
       .sort({ fechaGeneracion: -1 })
       .limit(100);
@@ -74,6 +78,11 @@ exports.listar = async (req, res, next) => {
           tamanoBytes: r.tamanoBytes,
           fechaGeneracion: r.fechaGeneracion,
           numeroDescargas: r.numeroDescargas,
+          generadoPor: r.generadoPorUsuarioId ? {
+            nombre: r.generadoPorUsuarioId.nombre,
+            email: r.generadoPorUsuarioId.email,
+            rol: r.generadoPorUsuarioId.rol
+          } : null,
           busqueda: r.busquedaId ? {
             casoNumero: r.busquedaId.casoNumero,
             patrones: r.busquedaId.patrones,

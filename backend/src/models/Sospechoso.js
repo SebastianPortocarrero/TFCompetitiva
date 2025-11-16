@@ -26,7 +26,7 @@ const sospechososSchema = new mongoose.Schema({
       },
       message: 'La cadena de ADN solo puede contener los caracteres A, T, C, G'
     },
-    minlength: [20, 'La cadena de ADN debe tener al menos 20 caracteres']
+    minlength: [100, 'La cadena de ADN debe tener al menos 100 caracteres']
   },
 
   longitudCadena: {
@@ -76,7 +76,7 @@ sospechososSchema.pre('save', function(next) {
 
 // Método estático: Validar cadena ADN
 sospechososSchema.statics.validarCadenaADN = function(cadena) {
-  return /^[ATCG]+$/.test(cadena) && cadena.length >= 20;
+  return /^[ATCG]+$/.test(cadena) && cadena.length >= 100;
 };
 
 module.exports = mongoose.model('Sospechoso', sospechososSchema);

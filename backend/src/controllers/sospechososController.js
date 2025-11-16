@@ -115,7 +115,7 @@ exports.cargaMasiva = async (req, res, next) => {
       // ============================================
       console.log('   Modo: Secuencial (archivo pequeño)');
 
-      const resultado = await procesarChunk(registros, req.usuario.id, errores, 0);
+      const resultado = await procesarChunk(registros, req.usuario._id, errores, 0);
       insertados = resultado.upsertedCount || 0;
       actualizados = resultado.modifiedCount || 0;
 
@@ -137,7 +137,7 @@ exports.cargaMasiva = async (req, res, next) => {
 
       // Procesar chunks en paralelo
       const resultados = await Promise.all(
-        chunks.map(chunk => procesarChunk(chunk.data, req.usuario.id, errores, chunk.offset))
+        chunks.map(chunk => procesarChunk(chunk.data, req.usuario._id, errores, chunk.offset))
       );
 
       // Sumar resultados
@@ -243,7 +243,7 @@ exports.crear = async (req, res, next) => {
   try {
     const datos = {
       ...req.body,
-      usuarioRegistroId: req.usuario.id
+      usuarioRegistroId: req.usuario._id
     };
 
     const sospechoso = await Sospechoso.create(datos);

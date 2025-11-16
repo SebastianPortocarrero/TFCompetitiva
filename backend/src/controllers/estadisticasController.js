@@ -4,7 +4,7 @@ const construirFiltro = (usuario, filtroUsuario) => {
   if (usuario.rol === 'admin') {
     return filtroUsuario ? { usuarioId: filtroUsuario } : {};
   }
-  return { usuarioId: usuario.id };
+  return { usuarioId: usuario._id };  // Usar _id (ObjectId) en lugar de .id (string)
 };
 
 exports.resumen = async (req, res, next) => {

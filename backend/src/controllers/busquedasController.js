@@ -59,7 +59,7 @@ exports.ejecutar = async (req, res, next) => {
       : [];
 
     const nuevaBusqueda = await Busqueda.create({
-      usuarioId: req.usuario.id,
+      usuarioId: req.usuario._id,
       casoNumero,
       descripcionCaso,
       ubicacionEvidencia,
@@ -104,7 +104,7 @@ exports.historial = async (req, res, next) => {
     const filtro = {};
 
     if (req.usuario.rol === 'perito') {
-      filtro.usuarioId = req.usuario.id;
+      filtro.usuarioId = req.usuario._id;
     } else if (req.usuario.rol === 'admin' && req.query.usuarioId) {
       filtro.usuarioId = req.query.usuarioId;
     }
@@ -159,7 +159,7 @@ exports.obtenerDetalle = async (req, res, next) => {
       throw new ErrorAPI('Búsqueda no encontrada', 404);
     }
 
-    if (req.usuario.rol === 'perito' && busqueda.usuarioId && busqueda.usuarioId.id !== req.usuario.id) {
+    if (req.usuario.rol === 'perito' && busqueda.usuarioId && !busqueda.usuarioId.equals(req.usuario._id)) {
       throw new ErrorAPI('No autorizado para ver esta búsqueda', 403);
     }
 
